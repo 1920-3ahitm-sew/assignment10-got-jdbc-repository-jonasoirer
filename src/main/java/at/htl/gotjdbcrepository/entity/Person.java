@@ -9,8 +9,7 @@ public class Person {
     private String city;
     private String house;
 
-    public Person() {
-    }
+    public Person() {}
 
     public Person(String name, String city, String house) {
         this.name = name;
@@ -50,7 +49,16 @@ public class Person {
         this.house = house;
     }
 
-
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Person person = (Person) o;
+        return Objects.equals(id, person.id) &&
+                Objects.equals(name, person.name) &&
+                Objects.equals(city, person.city) &&
+                Objects.equals(house, person.house);
+    }
 
     @Override
     public String toString() {

@@ -1,26 +1,45 @@
 package at.htl.gotjdbcrepository.control;
 
 import at.htl.gotjdbcrepository.entity.Person;
+import org.apache.derby.client.am.SqlException;
 
 import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
 
 public class PersonRepository implements Repository {
+    public static final String DRIVER_STRING = "org.apache.derby.jdbc.ClientDriver";
     public static final String USERNAME = "app";
     public static final String PASSWORD = "app";
     public static final String DATABASE = "db";
     public static final String URL = "jdbc:derby://localhost:1527/" + DATABASE + ";create=true";
     public static final String TABLE_NAME = "person";
 
-    private static PersonRepository instance;
+    private static PersonRepository instance = null;
+    Connection connection;
 
     private PersonRepository() {
+        connection = null;
+        try {
+            Class.forName(DRIVER_STRING);
+            connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+            connection.setAutoCommit(true);
+        } catch (ClassNotFoundException ex) {
+            System.out.println("Treiber laden nicht moeglich " + ex + "\n");
+            System.exit(1);
+        } catch (SQLException ex) {
+            System.out.println("Verbindung zur Datenbank nicht moeglich " + ex + "\n");
+            System.exit(1);
+        }
     }
 
     public static synchronized PersonRepository getInstance() {
-
-        return null;
+        if(instance == null) {
+            instance = new PersonRepository();
+            instance.createTable();
+        }
+        return instance;
     }
 
     private void createTable() {
@@ -41,8 +60,11 @@ public class PersonRepository implements Repository {
         }
     }
 
-    public void deleteAll() {
-
+    public void deleteAll() throws SQLException {
+        PreparedStatement deleteAllStatement = connection.prepareStatement(
+                "DELETE FROM " + TABLE_NAME
+        );
+        deleteAllStatement.executeUpdate();
     }
 
     /**
@@ -60,9 +82,9 @@ public class PersonRepository implements Repository {
      * @return die gespeicherte Person mit der (neuen) id
      */
     @Override
-    public Person save(Person newPerson) {
+    public Person save(Person newPerson) throws SQLException {
 
-        return null;
+        return insert(newPerson);
     }
 
     /**
@@ -72,9 +94,37 @@ public class PersonRepository implements Repository {
      * @param personToSave
      * @return Rückgabe der Person inklusive der neu generierten ID
      */
-    private Person insert(Person personToSave) {
+    private Person insert(Person personToSave) throws SQLException {
+        try (
+                Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+                PreparedStatement statement = connection.prepareStatement("INSERT INTO APP.PERSON (name, city, house) values (?,?,?)",
+                        Statement.RETURN_GENERATED_KEYS);
+        ) {
+           statement.setString(1, personToSave.getName());
+           statement.setString(2, personToSave.getCity());
+           statement.setString(3, personToSave.getHouse());
 
-        return null;
+           int affectedRows = statement.executeUpdate();
+
+           if (affectedRows == 0) {
+               throw new SQLException("Creating Person failed, no rows affected");
+           }
+
+           try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+               if (generatedKeys.next()) {
+                   personToSave.setId(generatedKeys.getLong(1));
+               }
+               else {
+                   throw new SQLException("Creating Person failed, no ID obtained");
+               }
+           }
+        }
+
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return personToSave;
     }
 
     /**
@@ -87,6 +137,8 @@ public class PersonRepository implements Repository {
 
         return -1;
     }
+
+   // public void create(Person )
 
     @Override
     public void delete(long id) {
@@ -101,8 +153,24 @@ public class PersonRepository implements Repository {
      * @return die gefundene Person oder wenn nicht gefunden wird null zurückgegeben
      */
     public Person find(long id) {
+        Person foundPerson = new Person();
+        try (
+            Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            PreparedStatement statement = connection.prepareStatement("SELECT * FROM APP.PERSON where id = ?");
+        ) {
+        statement.setString(1, String.valueOf(id));
+        ResultSet rs = statement.executeQuery();
+        while (rs.next()) {
+            foundPerson = new Person(rs.getString(2), rs.getString(3), rs.getString(4));
+            foundPerson.setId(rs.getLong(1));
+        }
+        statement.executeUpdate();
 
-        return null;
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+
+        return foundPerson;
     }
 
     /**

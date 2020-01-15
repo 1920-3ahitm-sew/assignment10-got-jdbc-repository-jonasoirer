@@ -6,7 +6,6 @@ import org.assertj.db.type.Table;
 import org.junit.jupiter.api.*;
 
 import javax.sql.DataSource;
-
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
@@ -38,7 +37,7 @@ class PersonRepositoryTest {
 
     @BeforeEach
     private void initEach() {
-        deleteAllFromTable(TABLE_NAME);
+         deleteAllFromTable(TABLE_NAME);
     }
 
 
@@ -97,7 +96,7 @@ class PersonRepositoryTest {
      * Prüfen der Methode "deleteAll()"
      */
     @Test
-    void test050_createRepositoryAndDeleteAllRecords() {
+    void test050_createRepositoryAndDeleteAllRecords() throws SQLException {
 
         Table personTable = new Table(dataSource, TABLE_NAME);
         output(personTable).toConsole();
@@ -141,7 +140,7 @@ class PersonRepositoryTest {
     }
 
     @Test
-    void test060_checkDeleteAllRecords() {
+    void test060_checkDeleteAllRecords() throws SQLException {
 
         Table personTable = new Table(dataSource, TABLE_NAME);
         output(personTable).toConsole();
@@ -169,7 +168,7 @@ class PersonRepositoryTest {
      * zurückgegeben wird
      */
     @Test
-    void test070_insertRecord() {
+    void test070_insertRecord() throws SQLException {
         // zurücksetzen der von der DB generierten ID auf 1
         dropTable(TABLE_NAME);
         setRepositoryInstanceToNull();
@@ -191,7 +190,7 @@ class PersonRepositoryTest {
      * doppelte Namen sind erlaubt
      */
     @Test
-    void test080_saveTwoRecords() {
+    void test080_saveTwoRecords() throws SQLException {
         Person missandei1 = new Person("Missandei", "Asshai", "Longthorpe of Longsister");
         Person missandei2 = new Person("Missandei", "Lorath", "Lyberr");
 
@@ -209,7 +208,7 @@ class PersonRepositoryTest {
      * Nicht erlaubt sind doppelte Zeilen mit identen NAME, CITY und HOUSE
      */
     @Test
-    void test090_saveDuplicateRecord() {
+    void test090_saveDuplicateRecord() throws SQLException {
         Person jakob = new Person("Jakob", "White Harbour", "Targaryen");
 
         PersonRepository personRepository = getInstance();
@@ -225,7 +224,7 @@ class PersonRepositoryTest {
      *
      */
     @Test
-    void test094_saveWithNonExistingId() {
+    void test094_saveWithNonExistingId() throws SQLException {
         /**
          * arrange ... Vorbereiten der Testsituation
          */
@@ -255,7 +254,7 @@ class PersonRepositoryTest {
      *
      */
     @Test
-    void test100_findById() {
+    void test100_findById() throws SQLException{
 
         /**
          * arrange ... Vorbereiten der Testsituation
@@ -268,7 +267,9 @@ class PersonRepositoryTest {
         List<Person> persons = readCsv(HUGE_FILE, 50);
         PersonRepository personRepository = getInstance();
         // in db speichern
-        persons.stream().forEach(personRepository::save);
+        for (Person person : persons) {
+            personRepository.save(person);
+        }
 
         Table personTable = new Table(dataSource, TABLE_NAME);
         output(personTable).toConsole();
@@ -290,7 +291,7 @@ class PersonRepositoryTest {
     }
 
     @Test
-    void test110_deleteAll() {
+    void test110_deleteAll() throws SQLException {
         /**
          * arrange ... Vorbereiten der Testsituation
          */
@@ -298,7 +299,9 @@ class PersonRepositoryTest {
         List<Person> persons = readCsv(HUGE_FILE, 50);
         PersonRepository personRepository = getInstance();
         // in db speichern
-        persons.stream().forEach(personRepository::save);
+        for (Person person : persons) {
+            personRepository.save(person);
+        }
 
         Table personTable = new Table(dataSource, TABLE_NAME);
         output(personTable).toConsole();
@@ -318,7 +321,7 @@ class PersonRepositoryTest {
     }
 
     @Test
-    void test120_findByHouse() {
+    void test120_findByHouse() throws SQLException {
         /**
          * arrange ... Vorbereiten der Testsituation
          */
@@ -330,7 +333,9 @@ class PersonRepositoryTest {
         List<Person> persons = readCsv(HUGE_FILE, 200);
         PersonRepository personRepository = getInstance();
         // in db speichern
-        persons.stream().forEach(personRepository::save);
+        for (Person person : persons) {
+            personRepository.save(person);
+        }
 
         Table personTable = new Table(dataSource, TABLE_NAME);
         output(personTable).toConsole();
