@@ -4,6 +4,7 @@ import at.htl.gotjdbcrepository.entity.Person;
 import org.apache.derby.client.am.SqlException;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -164,7 +165,6 @@ public class PersonRepository implements Repository {
             foundPerson = new Person(rs.getString(2), rs.getString(3), rs.getString(4));
             foundPerson.setId(rs.getLong(1));
         }
-        statement.executeUpdate();
 
     } catch (SQLException e) {
         e.printStackTrace();
@@ -179,8 +179,25 @@ public class PersonRepository implements Repository {
      * @return Liste aller Personen des gegebenen Hauses
      */
     public List<Person> findByHouse(String house) {
+        List<Person> personList = new ArrayList<>();
+        try (
+                Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+                PreparedStatement statement = connection.prepareStatement("SELECT id, name, city, house FROM person where house = " + house);
+        ) {
+           // statement.setString(1, house);
+            ResultSet resSet = statement.executeQuery();
 
-        return null;
+            while (resSet.next()) {
+                Person person = new Person(resSet.getString("name"), resSet.getString("city"), resSet.getString("house"));
+                person.setId(resSet.getLong("id"));
+                personList.add(person);
+            }
+
+            resSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return personList;
     }
 
 
